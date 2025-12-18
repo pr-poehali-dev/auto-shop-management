@@ -134,7 +134,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="clients" className="animate-fade-in">
-            <ClientsView clients={clients} appointments={appointments} setAppointments={setAppointments} />
+            <ClientsView clients={clients} appointments={appointments} setAppointments={setAppointments} cars={cars} />
           </TabsContent>
 
           <TabsContent value="cars" className="animate-fade-in">

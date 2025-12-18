@@ -4,17 +4,20 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import type { ClientData, Appointment } from '@/pages/Index';
+import EditClientDialog from './EditClientDialog';
+import type { ClientData, Appointment, Car } from '@/pages/Index';
 
 interface ClientsViewProps {
   clients: ClientData[];
   appointments: Appointment[];
   setAppointments: React.Dispatch<React.SetStateAction<Appointment[]>>;
+  cars: Car[];
 }
 
-const ClientsView = ({ clients, appointments, setAppointments }: ClientsViewProps) => {
+const ClientsView = ({ clients, appointments, setAppointments, cars }: ClientsViewProps) => {
   const [search, setSearch] = useState('');
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
+  const [editingClient, setEditingClient] = useState<ClientData | null>(null);
 
   const filteredClients = useMemo(() => {
     if (!search) return clients;
@@ -63,6 +66,28 @@ const ClientsView = ({ clients, appointments, setAppointments }: ClientsViewProp
     if (apt.status === 'arrived') return 'neon-green';
     if (apt.status === 'missed') return 'neon-red';
     return '';
+  };
+
+  const handleEditClient = (updates: Partial<ClientData>) => {
+    if (!editingClient) return;
+
+    setAppointments(prev => prev.map(apt => {
+      const aptClientId = apt.plateNumber
+        ? apt.plateNumber.toUpperCase().replace(/\s+/g, '')
+        : `${apt.carBrand}|${apt.carModel}|${apt.color || 'Без цвета'}`;
+
+      if (aptClientId === editingClient.id) {
+        return {
+          ...apt,
+          carBrand: updates.carBrand || apt.carBrand,
+          carModel: updates.carModel || apt.carModel,
+          plateNumber: updates.plateNumber,
+          color: updates.color,
+        };
+      }
+      return apt;
+    }));
+    setEditingClient(null);
   };
 
   return (
@@ -124,7 +149,20 @@ const ClientsView = ({ clients, appointments, setAppointments }: ClientsViewProp
 
                   <CollapsibleContent className="mt-4 space-y-3 animate-accordion-down">
                     <div className="border-t border-border pt-3">
-                      <h4 className="font-semibold mb-3">История визитов</h4>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold">Информация о клиенте</h4>
+                        <Button size="sm" variant="outline" onClick={() => setEditingClient(client)}>
+                          <Icon name="Pencil" size={14} className="mr-1" />
+                          Редактировать
+                        </Button>
+                      </div>
+                      {(client.name || client.phone) && (
+                        <div className="text-sm space-y-1 mb-3">
+                          {client.name && <div><span className="text-muted-foreground">Имя:</span> {client.name}</div>}
+                          {client.phone && <div><span className="text-muted-foreground">Телефон:</span> {client.phone}</div>}
+                        </div>
+                      )}
+                      <h4 className="font-semibold mb-3 mt-4">История визитов</h4>
                       {client.appointments.length === 0 ? (
                         <p className="text-sm text-muted-foreground">Нет записей</p>
                       ) : (
@@ -149,8 +187,12 @@ const ClientsView = ({ clients, appointments, setAppointments }: ClientsViewProp
                                     </div>
                                   )}
                                 </div>
-                                {apt.status === 'arrived' && <span>✔️</span>}
-                                {apt.status === 'missed' && <span>❌</span>}
+                                {apt.status === 'arrived' && (
+                                  <Icon name="Check" size={18} className="text-success" />
+                                )}
+                                {apt.status === 'missed' && (
+                                  <Icon name="X" size={18} className="text-destructive" />
+                                )}
                               </div>
                             </div>
                           ))}
@@ -163,6 +205,16 @@ const ClientsView = ({ clients, appointments, setAppointments }: ClientsViewProp
             );
           })}
         </div>
+      )}
+
+      {editingClient && (
+        <EditClientDialog
+          client={editingClient}
+          open={!!editingClient}
+          onOpenChange={(open) => !open && setEditingClient(null)}
+          cars={cars}
+          onSave={handleEditClient}
+        />
       )}
     </div>
   );

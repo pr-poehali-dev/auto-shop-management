@@ -74,11 +74,11 @@ const TimeSlot = ({ time, appointments, onAdd, onUpdate, getClientReliability }:
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Button size="icon" variant="ghost" onClick={onAdd}>
-              <Icon name="Plus" size={20} />
+            <Button size="icon" variant="ghost" onClick={onAdd} className="hover:bg-primary/10">
+              <Icon name="Plus" size={20} className="text-primary" />
             </Button>
             {appointments.length > 0 && (
-              <Button size="icon" variant="ghost" onClick={toggleExpanded}>
+              <Button size="icon" variant="ghost" onClick={toggleExpanded} className="hover:bg-accent">
                 <Icon name={isExpanded ? "ChevronUp" : "ChevronDown"} size={20} />
               </Button>
             )}
@@ -112,22 +112,23 @@ const TimeSlot = ({ time, appointments, onAdd, onUpdate, getClientReliability }:
                       size="icon"
                       variant="ghost"
                       onClick={() => handleStatusChange(apt.id, 'arrived')}
-                      className={apt.status === 'arrived' ? 'text-success' : ''}
+                      className={apt.status === 'arrived' ? 'text-success hover:bg-success/20' : 'hover:bg-success/10'}
                     >
-                      ✔️
+                      <Icon name="Check" size={18} />
                     </Button>
                     <Button
                       size="icon"
                       variant="ghost"
                       onClick={() => handleStatusChange(apt.id, 'missed')}
-                      className={apt.status === 'missed' ? 'text-destructive' : ''}
+                      className={apt.status === 'missed' ? 'text-destructive hover:bg-destructive/20' : 'hover:bg-destructive/10'}
                     >
-                      ❌
+                      <Icon name="X" size={18} />
                     </Button>
                     <Button
                       size="icon"
                       variant="ghost"
                       onClick={() => setEditAppointment(apt)}
+                      className="hover:bg-accent"
                     >
                       <Icon name="Pencil" size={16} />
                     </Button>
@@ -135,6 +136,7 @@ const TimeSlot = ({ time, appointments, onAdd, onUpdate, getClientReliability }:
                       size="icon"
                       variant="ghost"
                       onClick={() => setDeleteId(apt.id)}
+                      className="hover:bg-destructive/10"
                     >
                       <Icon name="Trash2" size={16} />
                     </Button>

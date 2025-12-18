@@ -13,6 +13,7 @@ interface SettingsViewProps {
 
 const SettingsView = ({ appointments, setAppointments }: SettingsViewProps) => {
   const [restoreDialog, setRestoreDialog] = useState(false);
+  const [archiveDialog, setArchiveDialog] = useState(false);
   const { toast } = useToast();
 
   const getFutureAppointments = () => {
@@ -107,7 +108,7 @@ const SettingsView = ({ appointments, setAppointments }: SettingsViewProps) => {
             <div className="flex-1">
               <h3 className="font-semibold mb-1">Бэкап данных</h3>
               <p className="text-sm text-muted-foreground mb-3">
-                Сохраняются только текущие и будущие записи
+                Сохраняются сегодняшние и все будущие записи
               </p>
               <div className="text-sm space-y-1 mb-4">
                 <div className="flex justify-between">
@@ -137,7 +138,7 @@ const SettingsView = ({ appointments, setAppointments }: SettingsViewProps) => {
             <div className="flex-1">
               <h3 className="font-semibold mb-1">Восстановление</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Загрузить данные из файла бэкапа. Текущие будущие записи будут заменены.
+                Загрузить данные из файла бэкапа. Сегодняшние и будущие записи будут заменены.
               </p>
               <Button
                 onClick={() => setRestoreDialog(true)}
@@ -146,6 +147,42 @@ const SettingsView = ({ appointments, setAppointments }: SettingsViewProps) => {
               >
                 <Icon name="Upload" size={18} className="mr-2" />
                 Восстановить из бэкапа
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <div className="space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="p-3 rounded-lg bg-muted">
+              <Icon name="Archive" size={24} className="text-muted-foreground" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold mb-1">Архив записей</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Прошлые записи хранятся в приложении
+              </p>
+              <div className="text-sm space-y-1 mb-4">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Записей в архиве:</span>
+                  <span className="font-medium">{appointments.filter(apt => {
+                    const aptDate = new Date(apt.date);
+                    aptDate.setHours(0, 0, 0, 0);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    return aptDate < today;
+                  }).length}</span>
+                </div>
+              </div>
+              <Button
+                onClick={() => setArchiveDialog(true)}
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
+                <Icon name="Download" size={18} className="mr-2" />
+                Скачать архив
               </Button>
             </div>
           </div>
@@ -176,7 +213,7 @@ const SettingsView = ({ appointments, setAppointments }: SettingsViewProps) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Восстановить данные?</AlertDialogTitle>
             <AlertDialogDescription>
-              Все текущие и будущие записи будут заменены данными из бэкапа. Прошлые записи останутся без изменений.
+              Все сегодняшние и будущие записи будут заменены данными из бэкапа. Прошлые записи останутся в архиве.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -191,6 +228,54 @@ const SettingsView = ({ appointments, setAppointments }: SettingsViewProps) => {
                   onChange={handleRestore}
                 />
               </label>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={archiveDialog} onOpenChange={setArchiveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Скачать архив?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Будут сохранены все прошлые записи для хранения вне приложения.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              const pastAppointments = appointments.filter(apt => {
+                const aptDate = new Date(apt.date);
+                aptDate.setHours(0, 0, 0, 0);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return aptDate < today;
+              });
+
+              const archive = {
+                version: 1,
+                timestamp: new Date().toISOString(),
+                appointments: pastAppointments,
+              };
+
+              const blob = new Blob([JSON.stringify(archive, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `autoservice-archive-${new Date().toISOString().split('T')[0]}.json`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+
+              toast({
+                title: 'Архив создан',
+                description: `Сохранено записей: ${pastAppointments.length}`,
+              });
+
+              setArchiveDialog(false);
+            }}>
+              Скачать
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

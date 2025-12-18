@@ -3,27 +3,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Icon from '@/components/ui/icon';
-import type { Appointment, Car } from '@/pages/Index';
+import type { ClientData, Car, Appointment } from '@/pages/Index';
 
-interface AppointmentDialogProps {
+interface EditClientDialogProps {
+  client: ClientData;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedDate: string;
-  selectedTime: string | null;
   cars: Car[];
-  onSave: (appointment: Appointment) => void;
+  onSave: (updates: Partial<ClientData>) => void;
 }
 
-const AppointmentDialog = ({ open, onOpenChange, selectedDate, selectedTime, cars, onSave }: AppointmentDialogProps) => {
-  const [carSearch, setCarSearch] = useState('');
-  const [plateNumber, setPlateNumber] = useState('');
-  const [color, setColor] = useState('');
-  const [notes, setNotes] = useState('');
-  const [time, setTime] = useState(selectedTime || '09:00');
+const EditClientDialog = ({ client, open, onOpenChange, cars, onSave }: EditClientDialogProps) => {
+  const [name, setName] = useState(client.name || '');
+  const [phone, setPhone] = useState(client.phone || '');
+  const [carSearch, setCarSearch] = useState(`${client.carBrand} ${client.carModel}`);
+  const [plateNumber, setPlateNumber] = useState(client.plateNumber || '');
+  const [color, setColor] = useState(client.color || '');
   const [carOpen, setCarOpen] = useState(false);
 
   const allCarOptions = useMemo(() => {
@@ -37,36 +35,18 @@ const AppointmentDialog = ({ open, onOpenChange, selectedDate, selectedTime, car
   }, [cars]);
 
   const handleSave = () => {
-    if (!carSearch || !carSearch.includes(' ')) {
-      return;
-    }
-
     const parts = carSearch.split(' ');
     const carBrand = parts[0];
     const carModel = parts.slice(1).join(' ');
 
-    const newAppointment: Appointment = {
-      id: `${Date.now()}-${Math.random()}`,
-      date: selectedDate,
-      time,
+    onSave({
+      name: name || undefined,
+      phone: phone || undefined,
       carBrand,
       carModel,
       plateNumber: plateNumber || undefined,
       color: color || undefined,
-      notes: notes || undefined,
-      status: null,
-    };
-
-    onSave(newAppointment);
-    handleClose();
-  };
-
-  const handleClose = () => {
-    setCarSearch('');
-    setPlateNumber('');
-    setColor('');
-    setNotes('');
-    setTime(selectedTime || '09:00');
+    });
     onOpenChange(false);
   };
 
@@ -74,12 +54,32 @@ const AppointmentDialog = ({ open, onOpenChange, selectedDate, selectedTime, car
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Новая запись</DialogTitle>
+          <DialogTitle>Редактировать клиента</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label>Марка и модель *</Label>
+            <Label htmlFor="client-name">Имя клиента</Label>
+            <Input
+              id="client-name"
+              placeholder="Иван Иванов"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="client-phone">Номер телефона</Label>
+            <Input
+              id="client-phone"
+              placeholder="+7 (900) 123-45-67"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Марка и модель</Label>
             <Popover open={carOpen} onOpenChange={setCarOpen}>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-between">
@@ -113,19 +113,9 @@ const AppointmentDialog = ({ open, onOpenChange, selectedDate, selectedTime, car
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="time">Время</Label>
+            <Label htmlFor="client-plate">Госномер</Label>
             <Input
-              id="time"
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="plate">Госномер</Label>
-            <Input
-              id="plate"
+              id="client-plate"
               placeholder="А123БВ77"
               value={plateNumber}
               onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
@@ -133,28 +123,18 @@ const AppointmentDialog = ({ open, onOpenChange, selectedDate, selectedTime, car
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="color">Цвет</Label>
+            <Label htmlFor="client-color">Цвет</Label>
             <Input
-              id="color"
+              id="client-color"
               placeholder="Белый"
               value={color}
               onChange={(e) => setColor(e.target.value)}
             />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Примечание</Label>
-            <Textarea
-              id="notes"
-              placeholder="Дополнительная информация"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Отмена
           </Button>
           <Button onClick={handleSave} disabled={!carSearch}>
@@ -166,4 +146,4 @@ const AppointmentDialog = ({ open, onOpenChange, selectedDate, selectedTime, car
   );
 };
 
-export default AppointmentDialog;
+export default EditClientDialog;
